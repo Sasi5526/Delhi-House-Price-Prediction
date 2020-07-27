@@ -1,0 +1,407 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul  3 18:27:40 2020
+
+@author: sasim
+"""
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import math
+import numpy as np
+import seaborn as sb
+from math import sqrt
+from sklearn.metrics import mean_squared_error as mse
+
+#Importing CSV files
+dataset=pd.read_csv('D:\\sasi\\New folder (2)\\MagicBricks.csv')
+dataset.info()
+desc = dataset.describe()
+
+null = dataset.isnull().sum().sort_values(ascending=False)
+na =  dataset.isna().sum().sort_values(ascending=False)
+
+#  correlation matrix
+sb.heatmap(dataset.corr(),annot=True)
+#To find the correlation of  variable with price by Pairplot
+sb.pairplot(dataset)
+
+'''From paiplot & correlation matrix we see that area,BHK,Bathroom has good correlation with price'''
+
+
+#Descriptive Analysis
+
+#Univariate Analysis & Filling null values
+
+#Area of the house
+fig = plt.figure(figsize = (24,6))
+plt.figure(1)
+plt.subplot(1,2,1)
+sb.distplot(dataset['Area'])
+plt.title(' Area of  houses')
+
+#count of BHK of the house
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.BHK),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Count of BHK of different houses')
+
+#Count of number of Bathroom of different house
+dataset['Bathroom'] = dataset['Bathroom'].fillna(value=1)
+
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Bathroom),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Count of number of Bathrooms of different houses')
+
+#Count of house on which type of furnishing is higher
+
+dataset['Furnishing'] = dataset['Furnishing'].fillna(dataset['Furnishing'].mode()[0])
+
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Furnishing),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Count of Furnishing')
+
+#Count of house on which has Parking
+dataset['Parking'] = dataset["Parking"].fillna(value=1).replace(9, 2)
+
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Parking),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Number of houses which has Parking')
+
+# Price of the house
+fig = plt.figure(figsize = (15,5))
+plt.figure(1)
+plt.subplot(1,2,1)
+sb.distplot(dataset['Price'])
+plt.title('Price of  houses')
+
+#Status of the Houses
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Status),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Housing Status')
+
+#Transaction of the Houses
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Transaction),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Count of how the Houses are.')
+
+#Type of the Houses
+dataset['Type'] = dataset['Type'].fillna(dataset['Type'].mode()[0])
+
+plt.figure(1,figsize=(10,6))
+sb.countplot((dataset.Type),color='#5DADEC')
+plt.legend(loc='upper right')
+plt.title('Count of house type')
+
+
+#Per square feet of the house
+dataset['Per_Sqft'] = dataset['Per_Sqft'].fillna(value=dataset['Per_Sqft'].median())
+
+fig = plt.figure(figsize = (15,5))
+plt.figure(1)
+plt.subplot(1,2,1)
+sb.distplot(dataset['Per_Sqft'])
+
+#Bivariate Analysis
+#Area of the house vs Price of the house
+plt.figure(1,figsize=(10,6))
+sb.scatterplot(x='Area', y='Price', data=dataset)
+plt.title('Area vs Price')
+
+#BHK vs Price
+plt.figure(1,figsize=(10,6))
+dataset.groupby('BHK')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs BHK')
+plt.show()
+
+
+#Price vs Bathroom
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Bathroom')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs Bathroom')
+plt.show()
+
+
+#Price vs Furnishing
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Furnishing')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.title('Price vs Furnishing')
+plt.show()
+
+#Price vs Parking
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Parking')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs Parking')
+plt.show()
+
+
+
+#Price vs status
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Status')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs Status')
+plt.show()
+
+#Price vs Transaction
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Transaction')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs Transaction')
+plt.show()
+
+
+#Price vs Type
+plt.figure(1,figsize=(10,6))
+dataset.groupby('Type')['Price'].median().plot.bar()
+plt.ylabel('Price')
+plt.xticks(rotation=45)
+plt.title('Price vs Type')
+plt.show()
+
+
+#Price vs Per Square Feet
+plt.figure(1,figsize=(10,6))
+sb.scatterplot(x='Area', y='Per_Sqft', data=dataset)
+plt.title('Price vs Type')
+
+
+
+dataset['Per_Sqft']=np.log(dataset['Per_Sqft'])
+
+dataset['Price']=np.log(dataset['Price'])
+
+dataset=dataset.drop("Locality",axis=1)
+
+
+#Get Dummies
+
+dummy = pd.get_dummies(dataset.loc[:,['Furnishing','Status','Transaction','Type']])
+dummy.info()
+dummy=dummy.drop(["Furnishing_Furnished", "Status_Almost_ready","Transaction_New_Property","Type_Apartment"],axis=1)
+dataset = dataset.drop(['Furnishing','Status','Transaction','Type'],axis=1)
+dataset = pd.concat([dataset,dummy],axis=1)
+
+
+##X & Y
+x = dataset
+x=x.drop("Price",axis=1)
+y=dataset['Price'].to_numpy()
+
+# VIF
+
+from statsmodels.stats.outliers_influence import variance_inflation_factor    
+
+def vif_calc(X):
+  import numpy as np
+  thresh=3
+  cols = x.columns
+  variables = np.arange(x.shape[1])
+  dropped=True
+  while dropped:
+       dropped=False
+       c = x[cols[variables]].values
+       vif = [variance_inflation_factor(c, i) for i in np.arange(c.shape[1])]
+       maxloc = vif.index(max(vif))
+       if max(vif) > thresh:
+        print('dropping \'' + x[cols[variables]].columns[maxloc] + '\' at index: ' + str(maxloc))
+        variables = np.delete(variables, maxloc)
+        dropped=True
+  print('Remaining variables:')
+  print(x.columns[variables])
+  return x[cols[variables]]
+vif=vif_calc(x)
+
+#Splitting into Training and test 
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.25, random_state = 0)
+
+#Model building & Evaluation
+
+#Multiple Linear Regression
+from sklearn.linear_model import LinearRegression
+regression=LinearRegression()
+
+regression.fit(x_train,y_train)
+regression.coef_
+regression.intercept_
+####y_pred
+y_pred=regression.predict(x_test)
+
+print(sqrt(mse(y_test,y_pred))) 
+
+sb.scatterplot(y_test, y_pred)
+
+# check score
+print('Train Score: ', regression.score(x_train,y_train))
+print('Test Score: ', regression.score(x_test,y_pred))
+
+
+'''We have train set accuracy of 0.7026930898759554 and test set accuracy of 1.0'''
+
+##Decision tree
+from sklearn.tree import DecisionTreeRegressor
+tree = DecisionTreeRegressor()
+tree.fit(x_train,y_train)
+
+####y_pred
+y_pred_tree=tree.predict(x_test)
+
+print(sqrt(mse(y_test,y_pred_tree))) 
+
+sb.scatterplot(y_test, y_pred_tree)
+
+# check score
+print('Train Score: ', tree.score(x_train,y_train))
+print('Test Score: ', tree.score(x_test,y_pred_tree))
+
+'''We have train set accuracy of 0.999425712547095 and test set accuracy of 1.0'''
+
+
+
+##Random Forest Regressor
+from sklearn.ensemble import RandomForestRegressor
+rf_reg = RandomForestRegressor(n_estimators=100)
+rf_reg.fit(x_train,y_train)
+y_pred_ran = rf_reg.predict(x_test)
+
+print(sqrt(mse(y_test,y_pred_ran)))
+
+sb.scatterplot(y_test, y_pred_ran)
+
+# check score
+print('Train Score: ', rf_reg.score(x_train,y_train))
+print('Test Score: ', rf_reg.score(x_test,y_pred_ran))
+
+
+'''We have train set accuracy of 0.9788848229078357 and test set accuracy of 1.0
+ Here we can see overfiiting issue'''
+ 
+##Gradient boosting
+from sklearn.ensemble import GradientBoostingRegressor
+grad = GradientBoostingRegressor()
+grad.fit(x_train,y_train)
+
+####y_pred
+y_pred_grad=grad.predict(x_test)
+
+print(sqrt(mse(y_test,y_pred_grad))) 
+
+sb.scatterplot(y_test, y_pred_grad)
+
+# check score
+print('Train Score: ', grad.score(x_train,y_train))
+print('Test Score: ', grad.score(x_test,y_pred_grad))
+
+
+'''We have train set accuracy of 0.9131759049745704 and test set accuracy of 1.0'''
+
+# XG Boosting
+import xgboost
+from xgboost import XGBRegressor
+xboost = XGBRegressor()
+xboost.fit(x_train,y_train)
+####y_pred
+y_pred_boost=xboost.predict(x_test)
+
+print(sqrt(mse(y_test,y_pred_boost))) 
+
+sb.scatterplot(y_test, y_pred_boost)
+
+# check score
+print('Train Score: ', xboost.score(x_train,y_train))
+print('Test Score: ', xboost.score(x_test,y_pred_boost))
+
+
+'''We have train set accuracy of 0.9926962868833058 and test set accuracy of 1.0'''
+
+
+
+####Regularization
+    ####Lasso&Ridge
+    
+###Cross Validation
+from sklearn.linear_model import LinearRegression
+lin = LinearRegression()
+from sklearn.model_selection import cross_val_score
+mse=cross_accuracy=cross_val_score(lin,x_train,y_train,cv=5,scoring='r2')
+
+mse = np.mean(mse)
+print(mse)
+
+#ridge&lasso
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import GridSearchCV
+
+ridge = Ridge()
+
+parameter={'alpha':[0,1e-10,1e-15,1,2,3,10,50,100]}
+
+ridge_grid=GridSearchCV(ridge,
+                         param_grid=parameter,
+                         scoring='r2',
+                         cv=5)
+
+ridge_grid.fit(x_train,y_train)
+y_pred_ridge=ridge_grid.predict(x_test)
+
+ridge_grid.best_score_
+ridge_grid.best_params_
+##
+from sklearn.linear_model import Lasso
+from sklearn.model_selection import GridSearchCV
+
+lasso = Lasso()
+
+parameter={'alpha':[0,1e-10,1e-15,1,2,3,10,50,100]}
+
+lasso_grid=GridSearchCV(lasso,
+                         param_grid=parameter,
+                         scoring='r2',
+                         cv=5)
+
+lasso_grid.fit(x_train,y_train)
+
+y_pred_lasso=lasso_grid.predict(x_test)
+lasso_grid.best_score_
+lasso_grid.best_params_
+
+##line plot of area vs price
+sb.lineplot(x=x.Area,y=dataset.Price)
+
+#Regression Plot
+
+plt.figure(figsize=(14,7))
+sb.regplot(x="Area", y="Price", data=dataset)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+H
