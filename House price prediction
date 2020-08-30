@@ -14,7 +14,8 @@ from math import sqrt
 from sklearn.metrics import mean_squared_error as mse
 
 #Importing CSV files
-dataset=pd.read_csv('D:\\sasi\\New folder (2)\\MagicBricks.csv')
+dataset=pd.read_csv('''''')\\MagicBricks.csv')
+
 dataset.info()
 desc = dataset.describe()
 
@@ -23,9 +24,9 @@ na =  dataset.isna().sum().sort_values(ascending=False)
 
 #  correlation matrix
 sb.heatmap(dataset.corr(),annot=True)
+
 #To find the correlation of  variable with price by Pairplot
 sb.pairplot(dataset)
-
 '''From paiplot & correlation matrix we see that area,BHK,Bathroom has good correlation with price'''
 
 
@@ -271,6 +272,9 @@ print('Test Score: ', tree.score(x_test,y_pred_tree))
 
 '''We have train set accuracy of 0.999425712547095 and test set accuracy of 1.0'''
 
+#Regression Plot
+plt.figure(figsize=(14,7))
+sb.regplot(x="Area", y="Price", data=dataset)
 
 
 ##Random Forest Regressor
@@ -288,8 +292,7 @@ print('Train Score: ', rf_reg.score(x_train,y_train))
 print('Test Score: ', rf_reg.score(x_test,y_pred_ran))
 
 
-'''We have train set accuracy of 0.9788848229078357 and test set accuracy of 1.0
- Here we can see overfiiting issue'''
+'''We have train set accuracy of 0.9788848229078357 and test set accuracy of 1.0'''
  
 ##Gradient boosting
 from sklearn.ensemble import GradientBoostingRegressor
@@ -380,28 +383,127 @@ y_pred_lasso=lasso_grid.predict(x_test)
 lasso_grid.best_score_
 lasso_grid.best_params_
 
-##line plot of area vs price
-sb.lineplot(x=x.Area,y=dataset.Price)
 
-#Regression Plot
-
-plt.figure(figsize=(14,7))
-sb.regplot(x="Area", y="Price", data=dataset)
-
-
-
-
-
-
-
+##PCA
+from sklearn.preprocessing import StandardScaler
+scale=StandardScaler()
+PCA=scale.fit_transform(dataset)
+PCA=pd.DataFrame(PCA)
+dataset.columns
+PCA.columns=dataset.columns
+new_PCA=pd.concat([dataset,PCA],axis=1)
+#train test split
+from sklearn.model_selection import train_test_split
+x_train_pca, x_test_pca,y_train_pca,y_test_pca = train_test_split(new_PCA,y,test_size = 0.25, random_state = 100)
 
 
+from sklearn.decomposition import PCA
+pca=PCA()
+
+x_train_pca=pca.fit_transform(x_train_pca)
+x_test_pca=pca.transform(x_test_pca)
+explained_ratio=pca.explained_variance_ratio_
 
 
+np.cumsum(explained_ratio)#cumulative sum out of 21 features up 10 features its 95 percent so we can remove other 
+#but column name is not orderly hence we dont know what can be removed so this is PCA
+
+####
+from sklearn.decomposition import PCA
+pca=PCA(n_components=10)
+
+x_train_pca=pca.fit_transform(x_train_pca)
+x_test_pca=pca.transform(x_test_pca)
+explained_ratio=pca.explained_variance_ratio_
+
+import numpy as np
+np.cumsum(explained_ratio)
 
 
+from sklearn.linear_model import LinearRegression
+regression=LinearRegression()
+regression.fit(x_train_pca,y_train_pca)
+regression.coef_
+regression.intercept_
+
+y_pred_pca=regression.predict(x_test_pca)
+
+from sklearn.metrics import r2_score
+r2_score(y_test_pca, y_pred_pca)
+print(sqrt(mse(y_test_pca,y_pred_pca))) 
+sb.scatterplot(y_test_pca, y_pred_pca)
+
+# check score
+print('Train Score: ', regression.score(x_train_pca,y_train_pca))
+print('Test Score: ', regression.score(x_test_pca,y_pred_pca))
+'''We have train set accuracy of 0.9983903372745592 and test set accuracy of 1.0'''
 
 
+##Ordinary least square
+##Backward elimination
+import statsmodels.api as sm
+x['intercept']=1
+x_OLS = x
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
+
+x_OLS=x_OLS.drop(["Parking"],axis=1)
+
+#iteration 1
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
+
+x_OLS=x_OLS.drop(["Furnishing_Semi-Furnished"],axis=1)
+
+#iteration 2
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
+
+x_OLS=x_OLS.drop(["Furnishing_Unfurnished"],axis=1)
+
+#iteration 3
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
+
+x_OLS=x_OLS.drop(["Status_Ready_to_move"],axis=1)
+
+#iteration 4
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
+
+x_OLS=x_OLS.drop(["Transaction_Resale"],axis=1)
+
+#iteration 5
+reg_OLS = sm.OLS(y,x_OLS).fit()
+reg_OLS.summary()
+max(reg_OLS.pvalues)
 
 
-H
+reg_OLS.rsquared_adj
+reg_OLS.rsquared
+
+
+x_OLS=x_OLS.drop(['intercept'],axis=1)
+from sklearn.model_selection import train_test_split
+x_train_ols, x_test_ols,y_train_ols,y_test_ols = train_test_split(x_OLS,y,test_size = 0.25, random_state = 100)
+
+from sklearn.linear_model import LinearRegression
+regression=LinearRegression()
+regression.fit(x_train_ols,y_train_ols)
+regression.coef_
+regression.intercept_
+y_pred_ols=regression.predict(x_test_ols)
+
+
+from sklearn.metrics import r2_score
+r2_ols = r2_score(y_test_ols, y_pred_ols)
+print(r2_ols)
+plt.scatter(y_test_ols,y_pred_ols)
+
+x_train_ols.info()
+
